@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Pro Araba Yarışı</title>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Oyun Konsolu */
+        .arcade-box {
+            position: relative;
+            width: 450px;
+            height: 650px;
+            background-color: #1e293b;
+            border: 8px solid #334155;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.9);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Skor Paneli */
+        .header {
+            background-color: #0f172a;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #38bdf8;
+            border-bottom: 4px solid #334155;
+            z-index: 20;
+        }
+
+        /* Yol */
+        .track {
+            position: relative;
+            flex-grow: 1;
+            background-color: #334155;
+            overflow: hidden;
+        }
+
+        /* Hareketli Şerit Çizgileri */
+        .road-lines {
+            position: absolute;
+            top: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 200%;
+            background-image: linear-gradient(to bottom, #ffffff 50%, transparent 50%);
+            background-size: 6px 50px;
+            animation: moveRoad 0.4s linear infinite;
+        }
+
+        @keyframes moveRoad {
+            0% { transform: translate(-50%, 0); }
+            100% { transform: translate(-50%, 50px); }
+        }
+
+        /* Oyuncu Arabası */
+        .player-car {
+            position: absolute;
+            bottom: 30px;
+            left: 200px;
+            width: 45px;
+            height: 85px;
+            background-color: #ef4444;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.8);
+            z-index: 10;
+            transition: left 0.1s ease-out;
+        }
+
+        .player-car::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 7px;
+            width: 31px;
+            height: 22px;
+            background-color: #0f172a;
+            border-radius: 3px;
+        }
+        .player-car::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            right: 4px;
+            height: 5px;
+            background-color: #facc15;
+            border-radius: 2px;
+        }
+
+        /* Rakip Arabalar */
+        .enemy-car {
+            position: absolute;
+            width: 45px;
+            height: 85px;
+            background-color: #38bdf8;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.8);
+        }
+
+        .enemy-car::before {
+            content: '';
+            position: absolute;
+            bottom: 8px;
+            left: 7px;
+            width: 31px;
+            height: 22px;
+            background-color: #0f172a;
+            border-radius: 3px;
+        }
+
+        /* Menü Ekranları */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(11, 15, 25, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .screen h1 { font-size: 34px; color: #f43f5e; margin-bottom: 10px; }
+        .screen p { color: #94a3b8; font-size: 15px; margin-bottom: 25px; line-height: 1.5; }
+
+        .btn {
+            padding: 14px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #22c55e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+            transition: 0.2s;
+            pointer-events: auto;
+        }
+        .btn:hover { background-color: #16a34a; transform: scale(1.05); }
+    </style>
+</head>
+<body>
+
+    <div class="arcade-box">
+        <div class="header">
+            <span>SKOR: <span id="score">0</span></span>
+            <span>PRO RACER</span>
+        </div>
+
+        <div class="track" id="track">
+            <div class="road-lines"></div>
+
+            <!-- Oyuncu Arabası -->
+            <div class="player-car" id="player"></div>
+
+            <!-- Rakip Araç -->
+            <div class="enemy-car" id="enemy"></div>
+
+            <!-- Başlangıç Ekranı -->
+            <div class="screen" id="startScreen">
+                <h1>PRO ARABA YARIŞI</h1>
+                <p>Klavyenizdeki <b>SOL / SAĞ</b> veya <b>A / D</b> tuşlarını kullanarak şerit değiştirin. Üzerinize gelen araçlara çarpmadan en yüksek skoru yapın!</p>
+                <button class="btn" id="startBtn">OYUNA BAŞLA</button>
+            </div>
+
+            <!-- Game Over Ekranı -->
+            <div class="screen" id="gameOverScreen" style="display: none;">
+                <h1>KAZA YAPTIN!</h1>
+                <p>Toplam Skorun: <span id="finalScore" style="color: #38bdf8; font-weight: bold; font-size: 20px;">0</span></p>
+                <button class="btn" id="restartBtn">TEKRAR OYNA</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const lanes = [65, 200, 335]; 
+        let currentLane = 1; 
+        let gameInterval, scoreInterval;
+        let score = 0;
+        let isPlaying = false;
+        let enemyY = -100;
+        let enemyLane = 0;
+        let enemySpeed = 6;
+
+        const player = document.getElementById('player');
+        const enemy = document.getElementById('enemy');
+        const scoreDisplay = document.getElementById('score');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScore = document.getElementById('finalScore');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+
+        function startGame() {
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            score = 0;
+            enemySpeed = 6;
+            currentLane = 1;
+            player.style.left = lanes[currentLane] + 'px';
+            enemyY = -120;
+            enemyLane = Math.floor(Math.random() * 3);
+            enemy.style.left = lanes[enemyLane] + 'px';
+            isPlaying = true;
+
+            clearInterval(gameInterval);
+            clearInterval(scoreInterval);
+
+            gameInterval = setInterval(updateGame, 20);
+            scoreInterval = setInterval(() => {
+                if (isPlaying) {
+                    score += 10;
+                    scoreDisplay.innerText = score;
+                    if (score % 100 === 0) enemySpeed += 0.5;
+                }
+            }, 500);
+        }
+
+        function updateGame() {
+            if (!isPlaying) return;
+
+            enemyY += enemySpeed;
+            enemy.style.top = enemyY + 'px';
+
+            if (enemyY > 650) {
+                enemyY = -120;
+                enemyLane = Math.floor(Math.random() * 3);
+                enemy.style.left = lanes[enemyLane] + 'px';
+            }
+
+            if (enemyY > 430 && enemyY < 560 && currentLane === enemyLane) {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(gameInterval);
+            clearInterval(scoreInterval);
+            finalScore.innerText = score;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        // Buton Dinleyicileri (Güvenli Bağlantı)
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+
+        // Klavye Kontrolleri
+        document.addEventListener('keydown', function(e) {
+            if (!isPlaying) return;
+
+            if ((e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') && currentLane > 0) {
+                currentLane--;
+            } else if ((e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') && currentLane < 2) {
+                currentLane++;
+            }
+            player.style.left = lanes[currentLane] + 'px';
+        });
+    </script>
+
+</body>
+</html>
