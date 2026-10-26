@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galaktik Savaşçı - Mağaza Oyunu</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050510;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        h1 {
+            margin: 5px 0;
+            letter-spacing: 3px;
+            text-shadow: 0 0 15px #00d2ff;
+        }
+
+        #ust-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px 16px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            max-width: 620px;
+        }
+
+        #oyunKapsayici {
+            position: relative;
+            width: 600px;
+            height: 500px;
+        }
+
+        #oyunAlani {
+            border: 3px solid #00d2ff;
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.5);
+            border-radius: 10px;
+            background: linear-gradient(to bottom, #020208, #0b0b26);
+            display: block;
+            box-sizing: content-box;
+            margin: -3px;
+        }
+
+        .ekran {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 16, 0.92);
+            backdrop-filter: blur(5px);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            z-index: 10;
+        }
+
+        .ekran h2 {
+            color: #00ff88;
+            margin: 0 0 6px 0;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        #magazaGrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            width: 560px;
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 2px;
+        }
+
+        .magaza-item {
+            background: rgba(0, 210, 255, 0.1);
+            border: 2px solid #00d2ff;
+            padding: 6px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px;
+            gap: 8px;
+        }
+
+        .magaza-item.maks {
+            border-color: #556;
+            opacity: 0.6;
+        }
+
+        .magaza-item span {
+            font-size: 12.5px;
+            font-weight: bold;
+            line-height: 1.3;
+        }
+
+        .magaza-item small {
+            font-weight: normal;
+            color: #aab;
+        }
+
+        .magaza-item small b {
+            color: #ffd32a;
+        }
+
+        .magaza-item small b.pahali {
+            color: #ff6b81;
+        }
+
+        #mesaj {
+            height: 18px;
+            margin: 6px 0;
+            font-size: 14px;
+            color: #ffd32a;
+            font-weight: bold;
+        }
+
+        #alt-panel {
+            margin-top: 10px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00d2ff, #0076ff);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, #33dcff, #3393ff);
+        }
+
+        .satin-al-btn {
+            background: linear-gradient(135deg, #00ff88, #00b359);
+            color: #020208;
+            border: none;
+            padding: 6px 12px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+            min-width: 48px;
+        }
+
+        .satin-al-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #33ff99, #00cc66);
+            transform: scale(1.05);
+        }
+
+        .satin-al-btn:disabled {
+            background: #445;
+            color: #889;
+            cursor: not-allowed;
+        }
+
+        .kontroller {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #8888aa;
+        }
+
+        #bitisSkor {
+            font-size: 18px;
+            line-height: 1.7;
+            text-align: center;
+            margin-bottom: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🛸 GALAKTİK SAVAŞÇI</h1>
+    <div id="ust-panel">
+        <div>Skor: <span id="skor" style="color: #00ff88;">0</span></div>
+        <div>Puan: <span id="puan" style="color: #ffd32a;">0</span></div>
+        <div>Can: <span id="can" style="color: #ff4757;">3</span></div>
+        <div>Dalga: <span id="dalga" style="color: #ff9f1a;">1</span></div>
+        <div>Lazer: <span id="lazerSeviye" style="color: #ff00ff;">1</span></div>
+        <div>Hız: <span id="hizSeviye" style="color: #00d2ff;">1</span></div>
+        <div>Kalkan: <span id="kalkanSayi" style="color: #4da3ff;">0</span></div>
+        <div>Bomba: <span id="bombaSayi" style="color: #ff7f50;">0</span></div>
+        <div>Rekor: <span id="rekor" style="color: #eccc68;">0</span></div>
+    </div>
+
+    <div id="oyunKapsayici">
+        <canvas id="oyunAlani" width="600" height="500"></canvas>
+
+        <div id="magazaEkrani" class="ekran">
+            <h2>🛒 GALAKTİK MAĞAZA</h2>
+            <div style="color: #ffd32a; font-size: 15px;">Puanın: <span id="magazaPuan">0</span></div>
+            <div id="mesaj"></div>
+            <div id="magazaGrid"></div>
+            <button class="btn" style="margin-top: 12px; background: #ff4757;" onclick="magazaKapat()">OYUNA DÖN</button>
+        </div>
+
+        <div id="bitisEkrani" class="ekran">
+            <h2 style="color:#ff4757;">💥 OYUN BİTTİ</h2>
+            <div id="bitisSkor"></div>
+            <button class="btn" onclick="yenidenBaslat()">TEKRAR OYNA (R)</button>
+        </div>
+    </div>
+
+    <div id="alt-panel">
+        <button class="btn" onclick="magazaAc()">🛒 MAĞAZA (P)</button>
+        <button class="btn" style="background: linear-gradient(135deg,#ff7f50,#e84118);" onclick="bombaKullan()">💣 BOMBA (B)</button>
+    </div>
+
+    <div class="kontroller">
+        🎮 <b>A / D / Yön Tuşları</b>: Hareket | <b>BOŞLUK</b>: Ateş | <b>B</b>: Bomba | <b>P</b>: Mağaza
+    </div>
+
+    <script>
+        const canvas = document.getElementById("oyunAlani");
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width;
+        const H = canvas.height;
+
+        const $ = (id) => document.getElementById(id);
+        const skorEl = $("skor"), puanEl = $("puan"), canEl = $("can"), dalgaEl = $("dalga");
+        const lazerEl = $("lazerSeviye"), hizEl = $("hizSeviye"), kalkanEl = $("kalkanSayi");
+        const bombaEl = $("bombaSayi"), rekorEl = $("rekor");
+        const magazaEkrani = $("magazaEkrani"), magazaPuanEl = $("magazaPuan");
+        const magazaGrid = $("magazaGrid"), mesajEl = $("mesaj");
+        const bitisEkrani = $("bitisEkrani"), bitisSkorEl = $("bitisSkor");
+
+        const MAKS_CAN = 8;
+        const MAKS_KALKAN = 3;
+        const MAKS_BOMBA = 3;
+
+        // ---------- Durum ----------
+        let skor, puan, can, dalga, oldurulen, gerekenOldurme, bossDalgasi, dalgaTamam;
+        let aktif, magazaAcik;
+        let seviye, kalkan, bomba, delici, tamir, alinan;
+        let mermiler, dusmanlar, dusmanMermileri, odul, parcaciklar, yildizlar;
+        let oyuncu, boss, spawnSayac, sonAtesZamani;
+        let sarsinti = 0, flas = 0, bannerMetin = "", bannerSure = 0, bannerAlt = "";
+        let rekor = 0;
+
+        try { rekor = parseInt(localStorage.getItem("galaktikRekor") || "0", 10) || 0; } catch (e) { rekor = 0; }
+
+        const tuslar = {};
+
+        function yenidenBaslat() {
+            skor = 0; puan = 0; can = 3; dalga = 1; oldurulen = 0;
+            gerekenOldurme = 6 + dalga * 3;
+            bossDalgasi = false; dalgaTamam = false;
+            aktif = true; magazaAcik = false;
+            seviye = { lazer: 1, hiz: 1, ates: 1, carpan: 0 };
+            kalkan = 0; bomba = 0; delici = false; tamir = false;
+            alinan = { can: 0, kalkan: 0, bomba: 0 };
+            mermiler = []; dusmanlar = []; dusmanMermileri = []; odul = []; parcaciklar = [];
+            boss = null;
+            spawnSayac = 40;
+            sonAtesZamani = 0;
+            sarsinti = 0; flas = 0;
+            oyuncu = { x: W / 2 - 20, y: H - 60, w: 40, h: 40, hiz: 5, dokunulmaz: 0 };
+            yildizlar = [];
+            for (let i = 0; i < 70; i++) {
+                yildizlar.push({
+                    x: Math.random() * W, y: Math.random() * H,
+                    boyut: Math.random() * 2, hiz: Math.random() * 1.5 + 0.5
+                });
+            }
+            bitisEkrani.style.display = "none";
+            magazaEkrani.style.display = "none";
+            banner("DALGA 1", "Hazır ol!");
+            panelGuncelle();
+        }
+
+        function panelGuncelle() {
+            skorEl.innerText = skor;
+            puanEl.innerText = puan;
+            canEl.innerText = can;
+            dalgaEl.innerText = dalga;
+            lazerEl.innerText = seviye.lazer;
+            hizEl.innerText = seviye.hiz;
+            kalkanEl.innerText = kalkan;
+            bombaEl.innerText = bomba;
+            rekorEl.innerText = rekor;
+            magazaPuanEl.innerText = puan;
+        }
+
+        function banner(metin, alt) {
+            bannerMetin = metin;
+            bannerAlt = alt || "";
+            bannerSure = 150;
+        }
+
+        // ---------- Klavye ----------
+        window.addEventListener("keydown", (e) => {
+            if (["Space", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
+            if (!e.repeat) {
+                if (e.code === "KeyP" || (e.code === "Escape" && magazaAcik)) {
+                    if (magazaAcik) magazaKapat(); else magazaAc();
+                }
+                if (e.code === "KeyB") bombaKullan();
+                if (e.code === "KeyR" && !aktif) yenidenBaslat();
+            }
+            tuslar[e.code] = true;
+        });
+        window.addEventListener("keyup", (e) => tuslar[e.code] = false);
+
+        // ---------- Mağaza ----------
+        const urunler = [
+            {
+                id: "can", ikon: "❤️", ad: "Can Yenile", acik: () => `+1 Can (${can}/${MAKS_CAN})`,
+                fiyat: () => 50 + 25 * alinan.can, dolu: () => can >= MAKS_CAN,
+                uygula: () => { can++; alinan.can++; }
+            },
+            {
+                id: "lazer", ikon: "⚡", ad: "Lazer Seviyesi", acik: () => `Seviye ${seviye.lazer}/5`,
+                fiyat: () => 100 + 75 * (seviye.lazer - 1), dolu: () => seviye.lazer >= 5,
+                uygula: () => { seviye.lazer++; }
+            },
+            {
+                id: "ates", ikon: "🔥", ad: "Ateş Hızı", acik: () => `Seviye ${seviye.ates}/5`,
+                fiyat: () => 90 + 60 * (seviye.ates - 1), dolu: () => seviye.ates >= 5,
+                uygula: () => { seviye.ates++; }
+            },
+            {
+                id: "hiz", ikon: "🚀", ad: "Mekik Hızı", acik: () => `Seviye ${seviye.hiz}/5`,
+                fiyat: () => 75 + 50 * (seviye.hiz - 1), dolu: () => seviye.hiz >= 5,
+                uygula: () => { seviye.hiz++; oyuncu.hiz += 0.9; }
+            },
+            {
+                id: "kalkan", ikon: "🛡️", ad: "Enerji Kalkanı", acik: () => `1 darbe emer (${kalkan}/${MAKS_KALKAN})`,
+                fiyat: () => 120 + 40 * alinan.kalkan, dolu: () => kalkan >= MAKS_KALKAN,
+                uygula: () => { kalkan++; alinan.kalkan++; }
+            },
+            {
+                id: "bomba", ikon: "💣", ad: "Nova Bombası", acik: () => `B tuşu, ekranı temizler (${bomba}/${MAKS_BOMBA})`,
+                fiyat: () => 150 + 50 * alinan.bomba, dolu: () => bomba >= MAKS_BOMBA,
+                uygula: () => { bomba++; alinan.bomba++; }
+            },
+            {
+                id: "carpan", ikon: "💰", ad: "Puan Çarpanı", acik: () => `x${(1 + 0.5 * seviye.carpan).toFixed(1)} → x${(1.5 + 0.5 * seviye.carpan).toFixed(1)}`,
+                fiyat: () => 200 + 150 * seviye.carpan, dolu: () => seviye.carpan >= 3,
+                uygula: () => { seviye.carpan++; }
+            },
+            {
+                id: "delici", ikon: "🎯", ad: "Delici Mermi", acik: () => "Mermiler 2 düşmanı vurur",
+                fiyat: () => 250, dolu: () => delici,
+                uygula: () => { delici = true; }
+            },
+            {
+                id: "tamir", ikon: "🔧", ad: "Dalga Tamiri", acik: () => "Her dalga sonunda +1 Can",
+                fiyat: () => 300, dolu: () => tamir,
+                uygula: () => { tamir = true; }
+            }
+        ];
+
+        function magazaCiz() {
+            magazaGrid.innerHTML = "";
+            for (const u of urunler) {
+                const dolu = u.dolu();
+                const fiyat = u.fiyat();
+                const yeter = puan >= fiyat;
+                const div = document.createElement("div");
+                div.className = "magaza-item" + (dolu ? " maks" : "");
+                div.innerHTML =
+                    `<span>${u.ikon} ${u.ad}<br><small>${u.acik()}<br>` +
+                    (dolu ? "TAMAM" : `Fiyat: <b class="${yeter ? "" : "pahali"}">${fiyat}</b> Puan`) +
+                    `</small></span>` +
+                    `<button class="satin-al-btn" ${dolu || !yeter ? "disabled" : ""} onclick="satinAl('${u.id}')">${dolu ? "MAKS" : "Al"}</button>`;
+                magazaGrid.appendChild(div);
+            }
+        }
+
+        let mesajZamanlayici = null;
+        function mesajGoster(metin) {
+            mesajEl.innerText = metin;
+            clearTimeout(mesajZamanlayici);
+            mesajZamanlayici = setTimeout(() => { mesajEl.innerText = ""; }, 1500);
+        }
+
+        function satinAl(id) {
+            const u = urunler.find((x) => x.id === id);
+            if (!u || u.dolu()) return;
+            const fiyat = u.fiyat();
+            if (puan < fiyat) { mesajGoster("❌ Yeterli puanın yok!"); return; }
+            puan -= fiyat;
+            u.uygula();
+            panelGuncelle();
+            magazaCiz();
+            mesajGoster(`✅ ${u.ad} alındı!`);
+            if (document.activeElement) document.activeElement.blur();
+        }
+
+        function magazaAc() {
+            if (!aktif) return;
+            magazaAcik = true;
+            panelGuncelle();
+            magazaCiz();
+            magazaEkrani.style.display = "flex";
+            if (document.activeElement) document.activeElement.blur();
+        }
+
+        function magazaKapat() {
+            magazaAcik = false;
+            magazaEkrani.style.display = "none";
+            if (document.activeElement) document.activeElement.blur();
+        }
+
+        // ---------- Yardımcılar ----------
+        function carpisma(a, b) {
+            return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+        }
+
+        function patlama(x, y, renk, adet) {
+            for (let i = 0; i < adet; i++) {
+                const aci = Math.random() * Math.PI * 2;
+                const hiz = Math.random() * 3.5 + 1;
+                parcaciklar.push({
+                    x, y, vx: Math.cos(aci) * hiz, vy: Math.sin(aci) * hiz,
+                    omur: 25 + Math.random() * 20, maks: 45, renk
+                });
+            }
+        }
+
+        function dusmanMermiAt(x, y, aci, hiz) {
+            dusmanMermileri.push({ x, y, vx: Math.sin(aci) * hiz, vy: Math.cos(aci) * hiz, r: 5 });
+        }
+
+        function oyuncuyaAci(x, y) {
+            const px = oyuncu.x + oyuncu.w / 2;
+            const py = oyuncu.y + oyuncu.h / 2;
+            return Math.atan2(px - x, py - y);
+        }
+
+        // ---------- Düşman Üretimi ----------
+        function tipSec() {
+            const havuz = [["normal", 10]];
+            if (dalga >= 2) havuz.push(["tank", 3 + Math.min(dalga, 8) * 0.4]);
+            if (dalga >= 3) havuz.push(["hizli", 3 + Math.min(dalga, 8) * 0.5]);
+            if (dalga >= 5) havuz.push(["nisanci", 2 + Math.min(dalga, 10) * 0.4]);
+            const toplam = havuz.reduce((t, h) => t + h[1], 0);
+            let r = Math.random() * toplam;
+            for (const [tip, agirlik] of havuz) {
+                r -= agirlik;
+                if (r <= 0) return tip;
+            }
+            return "normal";
+        }
+
+        function dusmanYap(tip) {
+            const T = {
+                normal: { w: 34, h: 34, hp: 1 + Math.floor((dalga - 1) / 4), hiz: 1.8 + dalga * 0.1, renk: "#ff4757", puan: 10 },
+                tank: { w: 52, h: 52, hp: 3 + Math.floor(dalga / 3), hiz: 1.0 + dalga * 0.05, renk: "#ff9f1a", puan: 35 },
+                hizli: { w: 28, h: 28, hp: 1 + Math.floor(dalga / 6), hiz: 2.6 + dalga * 0.12, renk: "#a55eea", puan: 20 },
+                nisanci: { w: 42, h: 38, hp: 2 + Math.floor(dalga / 4), hiz: 1.2 + dalga * 0.04, renk: "#badc58", puan: 40 }
+            }[tip];
+            const x = Math.random() * (W - T.w);
+            dusmanlar.push({
+                tip, x, bx: x, y: -T.h, w: T.w, h: T.h,
+                hp: T.hp, maxHp: T.hp, hiz: Math.min(T.hiz, 5.5),
+                renk: T.renk, puan: T.puan, t: Math.random() * 6, flash: 0,
+                atesT: 60 + Math.random() * 60
+            });
+        }
+
+        function bossYap() {
+            const hp = 40 + dalga * 8;
+            boss = {
+                tip: "boss", x: W / 2 - 60, y: -80, w: 120, h: 70,
+                hp, maxHp: hp, hiz: 1.5 + dalga * 0.05, dir: 1,
+                renk: "#e84118", puan: 500 + dalga * 50, flash: 0,
+                atesT: 90, mod: 0
+            };
+            dusmanlar.push(boss);
+        }
+
+        // ---------- Dalga Sistemi ----------
+        function sonrakiDalga() {
+            const bonus = 25 * dalga;
+            skor += bonus;
+            puan += bonus;
+            let alt = `+${bonus} bonus puan`;
+            if (tamir && can < MAKS_CAN) { can++; alt += " | +1 can"; }
+            dalga++;
+            oldurulen = 0;
+            gerekenOldurme = 6 + dalga * 3;
+            dalgaTamam = false;
+            dusmanMermileri = [];
+            bossDalgasi = dalga % 5 === 0;
+            if (bossDalgasi) {
+                bossYap();
+                banner(`DALGA ${dalga}`, "⚠️ BOSS GELİYOR! | " + alt);
+            } else {
+                banner(`DALGA ${dalga}`, alt);
+            }
+            panelGuncelle();
+        }
+
+        // ---------- Hasar / Ölüm ----------
+        function hasar(yoksay) {
+            if (!aktif) return;
+            if (!yoksay && oyuncu.dokunulmaz > 0) return;
+            const cx = oyuncu.x + oyuncu.w / 2, cy = oyuncu.y + oyuncu.h / 2;
+            if (kalkan > 0) {
+                kalkan--;
+                if (!yoksay) oyuncu.dokunulmaz = 60;
+                patlama(cx, cy, "#4da3ff", 16);
+            } else {
+                can--;
+                if (!yoksay) oyuncu.dokunulmaz = 90;
+                sarsinti = 12;
+                patlama(cx, cy, "#ff4757", 20);
+                if (can <= 0) { can = 0; oyunBitir(); }
+            }
+            panelGuncelle();
+        }
+
+        function oyunBitir() {
+            aktif = false;
+            if (skor > rekor) {
+                rekor = skor;
+                try { localStorage.setItem("galaktikRekor", String(rekor)); } catch (e) { }
+            }
+            panelGuncelle();
+            bitisSkorEl.innerHTML = `Skor: <b style="color:#00ff88">${skor}</b><br>Ulaşılan Dalga: <b style="color:#ff9f1a">${dalga}</b><br>Rekor: <b style="color:#eccc68">${rekor}</b>`;
+            bitisEkrani.style.display = "flex";
+        }
+
+        function bombaKullan() {
+            if (!aktif || magazaAcik || bomba <= 0) return;
+            bomba--;
+            flas = 20;
+            sarsinti = 15;
+            for (const d of dusmanlar) {
+                d.hp -= d.tip === "boss" ? 25 : 10;
+                d.flash = 6;
+                patlama(d.x + d.w / 2, d.y + d.h / 2, "#ff7f50", 8);
+                if (d.hp <= 0 && !d.olu) dusmanOldur(d);
+            }
+            dusmanMermileri = [];
+            panelGuncelle();
+        }
+
+        function dusmanOldur(d) {
+            d.olu = true;
+            const p = Math.round(d.puan * (1 + 0.5 * seviye.carpan));
+            skor += p;
+            puan += p;
+            patlama(d.x + d.w / 2, d.y + d.h / 2, d.renk, d.tip === "boss" ? 60 : 14);
+            if (d.tip === "boss") {
+                boss = null;
+                dalgaTamam = true;
+                for (let i = 0; i < 3; i++) {
+                    odulBirak(d.x + d.w / 2 - 40 + i * 40, d.y + d.h / 2, ["can", "kalkan", "puan"][i]);
+                }
+                sarsinti = 20;
+            } else {
+                if (!bossDalgasi) {
+                    oldurulen++;
+                    if (oldurulen >= gerekenOldurme) dalgaTamam = true;
+                }
+                if (Math.random() < 0.12) {
+                    const r = Math.random();
+                    odulBirak(d.x + d.w / 2, d.y + d.h / 2, r < 0.3 ? "can" : r < 0.6 ? "kalkan" : "puan");
+                }
+            }
+            panelGuncelle();
+        }
+
+        function odulBirak(x, y, tip) {
+            odul.push({ x: x - 11, y: y - 11, w: 22, h: 22, tip, vy: 1.6 });
+        }
+
+        // ---------- Ateş ----------
+        function atesEt() {
+            const cx = oyuncu.x + oyuncu.w / 2;
+            const kalip = {
+                1: [[0, 0]],
+                2: [[-8, 0], [8, 0]],
+                3: [[0, 0], [-10, -1.5], [10, 1.5]],
+                4: [[-6, 0], [6, 0], [-14, -1.8], [14, 1.8]],
+                5: [[0, 0], [-8, -1.2], [8, 1.2], [-16, -2.6], [16, 2.6]]
+            }[seviye.lazer];
+            for (const [ox, vx] of kalip) {
+                mermiler.push({
+                    x: cx + ox - 3, y: oyuncu.y, w: 6, h: 15, vx, vy: -10,
+                    vurulan: [], delici: delici ? 1 : 0, sil: false
+                });
+            }
+        }
+
+        // ---------- Güncelleme ----------
+        function guncelle(dt) {
+            if (!aktif || magazaAcik) return;
+
+            for (const y of yildizlar) {
+                y.y += y.hiz * dt;
+                if (y.y > H) { y.y = 0; y.x = Math.random() * W; }
+            }
+
+            // Oyuncu hareketi
+            if ((tuslar["ArrowLeft"] || tuslar["KeyA"]) && oyuncu.x > 0) oyuncu.x -= oyuncu.hiz * dt;
+            if ((tuslar["ArrowRight"] || tuslar["KeyD"]) && oyuncu.x < W - oyuncu.w) oyuncu.x += oyuncu.hiz * dt;
+            oyuncu.x = Math.max(0, Math.min(W - oyuncu.w, oyuncu.x));
+            if (oyuncu.dokunulmaz > 0) oyuncu.dokunulmaz -= dt;
+
+            // Ateş
+            const bekleme = 200 - 25 * (seviye.ates - 1);
+            if (tuslar["Space"] && Date.now() - sonAtesZamani > bekleme) {
+                atesEt();
+                sonAtesZamani = Date.now();
+            }
+
+            // Düşman doğurma (zorluk dalgayla artar)
+            spawnSayac -= dt;
+            if (spawnSayac <= 0) {
+                let aralik = Math.max(16, 55 - dalga * 3);
+                if (bossDalgasi) aralik *= 2.2;
+                spawnSayac = aralik * (0.8 + Math.random() * 0.4);
+                if (!(bossDalgasi && dusmanlar.length > 8)) dusmanYap(tipSec());
+            }
+
+            // Mermiler
+            for (const m of mermiler) {
+                m.x += m.vx * dt;
+                m.y += m.vy * dt;
+                if (m.y < -20 || m.x < -20 || m.x > W + 20) m.sil = true;
+            }
+
+            // Düşmanlar
+            for (const d of dusmanlar) {
+                if (d.olu) continue;
+                if (d.flash > 0) d.flash -= dt;
+
+                if (d.tip === "boss") {
+                    if (d.y < 50) d.y += 1.5 * dt;
+                    else {
+                        d.x += d.dir * d.hiz * dt;
+                        if (d.x <= 0) { d.x = 0; d.dir = 1; }
+                        if (d.x >= W - d.w) { d.x = W - d.w; d.dir = -1; }
+                        d.atesT -= dt;
+                        if (d.atesT <= 0) {
+                            d.atesT = Math.max(45, 95 - dalga * 2);
+                            d.mod = (d.mod + 1) % 2;
+                            const bx = d.x + d.w / 2, by = d.y + d.h;
+                            if (d.mod === 0) {
+                                for (let a = -2; a <= 2; a++) dusmanMermiAt(bx, by, a * 0.28, 3.4);
+                            } else {
+                                const hedef = oyuncuyaAci(bx, by);
+                                for (let a = -1; a <= 1; a++) dusmanMermiAt(bx, by, hedef + a * 0.12, 4.2);
+                            }
+                        }
+                    }
+                } else {
+                    d.y += d.hiz * dt;
+                    if (d.tip === "hizli") {
+                        d.t += dt;
+                        d.x = Math.max(0, Math.min(W - d.w, d.bx + Math.sin(d.t * 0.06) * 70));
+                    }
+                    if (d.tip === "nisanci") {
+                        d.atesT -= dt;
+                        if (d.atesT <= 0 && d.y > 0 && d.y < H - 160) {
+                            d.atesT = Math.max(60, 120 - dalga * 3);
+                            const bx = d.x + d.w / 2, by = d.y + d.h;
+                            dusmanMermiAt(bx, by, oyuncuyaAci(bx, by), 3.2 + Math.min(dalga * 0.05, 1.5));
+                        }
+                    }
+                }
+
+                // Mermi - düşman çarpışması
+                for (const m of mermiler) {
+                    if (m.sil || m.vurulan.includes(d)) continue;
+                    if (carpisma(m, d)) {
+                        m.vurulan.push(d);
+                        d.hp--;
+                        d.flash = 4;
+                        if (m.delici > 0) m.delici--; else m.sil = true;
+                        if (d.hp <= 0) { dusmanOldur(d); break; }
+                        if (m.sil) break;
+                    }
+                }
+                if (d.olu) continue;
+
+                // Oyuncu çarpışması
+                if (carpisma(oyuncu, d)) {
+                    if (d.tip !== "boss") {
+                        d.olu = true;
+                        patlama(d.x + d.w / 2, d.y + d.h / 2, d.renk, 12);
+                        if (!bossDalgasi) {
+                            oldurulen++;
+                            if (oldurulen >= gerekenOldurme) dalgaTamam = true;
+                        }
+                    }
+                    hasar(false);
+                } else if (d.tip !== "boss" && d.y > H) {
+                    d.olu = true;
+                    hasar(true);
+                    if (!bossDalgasi) {
+                        oldurulen++;
+                        if (oldurulen >= gerekenOldurme) dalgaTamam = true;
+                    }
+                }
+            }
+            mermiler = mermiler.filter((m) => !m.sil);
+            dusmanlar = dusmanlar.filter((d) => !d.olu);
+            if (!aktif) return;
+
+            // Düşman mermileri
+            const hitbox = { x: oyuncu.x + 8, y: oyuncu.y + 8, w: oyuncu.w - 16, h: oyuncu.h - 12 };
+            for (const b of dusmanMermileri) {
+                b.x += b.vx * dt;
+                b.y += b.vy * dt;
+                if (b.x > hitbox.x - b.r && b.x < hitbox.x + hitbox.w + b.r &&
+                    b.y > hitbox.y - b.r && b.y < hitbox.y + hitbox.h + b.r) {
+                    b.sil = true;
+                    hasar(false);
+                }
+            }
+            dusmanMermileri = dusmanMermileri.filter((b) => !b.sil && b.y < H + 20 && b.y > -20 && b.x > -20 && b.x < W + 20);
+
+            // Ödüller
+            for (const o of odul) {
+                o.y += o.vy * dt;
+                if (carpisma(oyuncu, o)) {
+                    o.sil = true;
+                    if (o.tip === "can") { if (can < MAKS_CAN) can++; else puan += 20; }
+                    else if (o.tip === "kalkan") { if (kalkan < MAKS_KALKAN) kalkan++; else puan += 20; }
+                    else puan += 40;
+                    patlama(o.x + 11, o.y + 11, "#ffd32a", 8);
+                    panelGuncelle();
+                }
+                if (o.y > H) o.sil = true;
+            }
+            odul = odul.filter((o) => !o.sil);
+
+            // Parçacıklar
+            for (const p of parcaciklar) {
+                p.x += p.vx * dt; p.y += p.vy * dt; p.omur -= dt;
+            }
+            parcaciklar = parcaciklar.filter((p) => p.omur > 0);
+
+            if (sarsinti > 0) sarsinti -= dt;
+            if (flas > 0) flas -= dt;
+            if (bannerSure > 0) bannerSure -= dt;
+
+            if (dalgaTamam) sonrakiDalga();
+        }
+
+        // ---------- Çizim ----------
+        function dusmanCiz(d) {
+            const f = d.flash > 0;
+            ctx.fillStyle = f ? "#ffffff" : d.renk;
+            if (d.tip === "hizli") {
+                ctx.beginPath();
+                ctx.moveTo(d.x + d.w / 2, d.y);
+                ctx.lineTo(d.x + d.w, d.y + d.h / 2);
+                ctx.lineTo(d.x + d.w / 2, d.y + d.h);
+                ctx.lineTo(d.x, d.y + d.h / 2);
+                ctx.closePath();
+                ctx.fill();
+            } else if (d.tip === "nisanci") {
+                ctx.beginPath();
+                ctx.moveTo(d.x, d.y);
+                ctx.lineTo(d.x + d.w, d.y);
+                ctx.lineTo(d.x + d.w / 2, d.y + d.h);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = "#222";
+                ctx.fillRect(d.x + d.w / 2 - 3, d.y + 6, 6, 14);
+            } else if (d.tip === "boss") {
+                ctx.beginPath();
+                ctx.moveTo(d.x, d.y + 15);
+                ctx.lineTo(d.x + 20, d.y);
+                ctx.lineTo(d.x + d.w - 20, d.y);
+                ctx.lineTo(d.x + d.w, d.y + 15);
+                ctx.lineTo(d.x + d.w - 25, d.y + d.h);
+                ctx.lineTo(d.x + 25, d.y + d.h);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = f ? "#e84118" : "#ffeaa7";
+                ctx.fillRect(d.x + 32, d.y + 22, 14, 10);
+                ctx.fillRect(d.x + d.w - 46, d.y + 22, 14, 10);
+            } else {
+                ctx.fillRect(d.x, d.y, d.w, d.h);
+                if (!f) {
+                    ctx.fillStyle = "rgba(255,255,255,0.85)";
+                    ctx.fillRect(d.x + d.w * 0.2, d.y + d.h * 0.3, d.w * 0.2, d.h * 0.18);
+                    ctx.fillRect(d.x + d.w * 0.6, d.y + d.h * 0.3, d.w * 0.2, d.h * 0.18);
+                }
+            }
+            if (d.maxHp > 1 && d.tip !== "boss") {
+                ctx.fillStyle = "#555";
+                ctx.fillRect(d.x, d.y - 8, d.w, 4);
+                ctx.fillStyle = "#00ff88";
+                ctx.fillRect(d.x, d.y - 8, d.w * Math.max(0, d.hp / d.maxHp), 4);
+            }
+        }
+
+        function ciz() {
+            ctx.save();
+            ctx.clearRect(0, 0, W, H);
+            if (sarsinti > 0) ctx.translate((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6);
+
+            // Yıldızlar
+            ctx.fillStyle = "#ffffff";
+            for (const y of yildizlar) ctx.fillRect(y.x, y.y, y.boyut, y.boyut);
+
+            // Mermiler
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#00ffff";
+            ctx.fillStyle = "#00ffff";
+            for (const m of mermiler) ctx.fillRect(m.x, m.y, m.w, m.h);
+            ctx.shadowBlur = 0;
+
+            // Düşmanlar
+            for (const d of dusmanlar) dusmanCiz(d);
+
+            // Düşman mermileri
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#ff4757";
+            ctx.fillStyle = "#ff6b81";
+            for (const b of dusmanMermileri) {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.shadowBlur = 0;
+
+            // Ödüller
+            ctx.font = "20px serif";
+            ctx.textAlign = "center";
+            for (const o of odul) {
+                ctx.fillStyle = "rgba(255,255,255,0.15)";
+                ctx.beginPath();
+                ctx.arc(o.x + 11, o.y + 11, 13, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#fff";
+                ctx.fillText(o.tip === "can" ? "❤️" : o.tip === "kalkan" ? "🛡️" : "💰", o.x + 11, o.y + 18);
+            }
+
+            // Parçacıklar
+            for (const p of parcaciklar) {
+                ctx.globalAlpha = Math.max(0, p.omur / p.maks);
+                ctx.fillStyle = p.renk;
+                ctx.fillRect(p.x, p.y, 3, 3);
+            }
+            ctx.globalAlpha = 1;
+
+            // Oyuncu
+            if (aktif && (oyuncu.dokunulmaz <= 0 || Math.floor(oyuncu.dokunulmaz / 5) % 2 === 0)) {
+                const o = oyuncu;
+                // Alev
+                ctx.fillStyle = "#ff9f1a";
+                ctx.beginPath();
+                ctx.moveTo(o.x + o.w / 2 - 6, o.y + o.h - 12);
+                ctx.lineTo(o.x + o.w / 2, o.y + o.h + 6 + Math.random() * 8);
+                ctx.lineTo(o.x + o.w / 2 + 6, o.y + o.h - 12);
+                ctx.closePath();
+                ctx.fill();
+                // Gövde
+                ctx.fillStyle = "#00d2ff";
+                ctx.beginPath();
+                ctx.moveTo(o.x + o.w / 2, o.y);
+                ctx.lineTo(o.x, o.y + o.h);
+                ctx.lineTo(o.x + o.w / 2, o.y + o.h - 12);
+                ctx.lineTo(o.x + o.w, o.y + o.h);
+                ctx.closePath();
+                ctx.fill();
+            }
+            if (aktif && kalkan > 0) {
+                ctx.strokeStyle = "rgba(77,163,255,0.9)";
+                ctx.lineWidth = 2 + kalkan;
+                ctx.beginPath();
+                ctx.arc(oyuncu.x + oyuncu.w / 2, oyuncu.y + oyuncu.h / 2, 32, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Dalga ilerleme çubuğu
+            ctx.fillStyle = "rgba(255,255,255,0.12)";
+            ctx.fillRect(0, 0, W, 5);
+            ctx.fillStyle = "#ff9f1a";
+            if (!bossDalgasi) ctx.fillRect(0, 0, W * Math.min(1, oldurulen / gerekenOldurme), 5);
+
+            // Boss can çubuğu
+            if (boss) {
+                ctx.fillStyle = "#555";
+                ctx.fillRect(100, 12, W - 200, 10);
+                ctx.fillStyle = "#e84118";
+                ctx.fillRect(100, 12, (W - 200) * Math.max(0, boss.hp / boss.maxHp), 10);
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 11px sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("BOSS", W / 2, 31);
+            }
+
+            // Bomba flaşı
+            if (flas > 0) {
+                ctx.fillStyle = `rgba(255,200,150,${Math.min(0.7, flas / 20)})`;
+                ctx.fillRect(0, 0, W, H);
+            }
+
+            // Banner
+            if (bannerSure > 0) {
+                ctx.globalAlpha = Math.min(1, bannerSure / 30);
+                ctx.textAlign = "center";
+                ctx.fillStyle = "#00d2ff";
+                ctx.shadowColor = "#00d2ff";
+                ctx.shadowBlur = 20;
+                ctx.font = "bold 44px sans-serif";
+                ctx.fillText(bannerMetin, W / 2, H / 2 - 30);
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "16px sans-serif";
+                ctx.fillText(bannerAlt, W / 2, H / 2 + 5);
+                ctx.globalAlpha = 1;
+            }
+
+            ctx.restore();
+        }
+
+        // ---------- Ana Döngü ----------
+        let sonZaman = performance.now();
+        function dongu(zaman) {
+            const dt = Math.min((zaman - sonZaman) / 16.667, 3);
+            sonZaman = zaman;
+            guncelle(dt);
+            ciz();
+            requestAnimationFrame(dongu);
+        }
+
+        yenidenBaslat();
+        requestAnimationFrame(dongu);
+    </script>
+</body>
+</html>
